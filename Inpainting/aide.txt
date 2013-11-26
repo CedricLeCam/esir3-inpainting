@@ -1,0 +1,10 @@
+OpenCV référence depth
+
+        IPL_DEPTH_8U - unsigned 8-bit integer. Equivalent to CV_8U in matrix types.
+        IPL_DEPTH_8S - signed 8-bit integer. Equivalent to CV_8S in matrix types.
+        IPL_DEPTH_16U - unsigned 16-bit integer. Equivalent to CV_16U in matrix types.
+        IPL_DEPTH_16S - signed 8-bit integer. Equivalent to CV_16S in matrix types.
+        IPL_DEPTH_32S - signed 32-bit integer. Equivalent to CV_32S in matrix types.
+        IPL_DEPTH_32F - single-precision floating-point number. Equivalent to CV_32F in matrix types.
+        IPL_DEPTH_64F - double-precision floating-point number. Equivalent to CV_64F in matrix types.
+
