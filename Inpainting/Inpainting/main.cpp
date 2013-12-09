@@ -1,12 +1,40 @@
 #include <iostream>
 #include <string>
 #include <vector>
+#include <cmath>
 #include <opencv2\core\core.hpp>
 #include <opencv2\highgui\highgui.hpp>
 #include <opencv2\imgproc\imgproc.hpp>
 
+
 using namespace std;
 using namespace cv;
+
+
+//transition de RGB vers RGB normalise
+Vec3f normalizeRGB(const Vec3b & pixel)
+{
+	int b = pixel.val[0];
+	int g = pixel.val[1];
+	int r = pixel.val[2];
+	float n = 1.0/(float)(b+g+r);
+	Vec3f res((float)b*n, (float)g*n, (float)r*n);
+	return res;
+}
+
+//norme de la difference entre deux Vec3f ||v1 - v2||
+float diff(const Vec3f & v1, const Vec3f & v2)
+{
+	return norm(v1-v2);
+}
+
+//squared difference
+float squareDiff(const Vec3f & v1, const Vec3f & v2)
+{
+	float d = diff(v1,v2);
+	return d*d;
+}
+
 
 int main(int argc, char ** argv) {
 
@@ -168,29 +196,80 @@ int main(int argc, char ** argv) {
 	//template matching
 
 	//parametres
-	float t_patch = 9.0;
-	int half = t_patch/2;
+	t_patch = 9.0;
+	half = t_patch/2;
 
 	//récupération des pixels connus du patch autour de la priorité
-	vector<Point> connus;
+	vector<Point> indices_connus;
+	vector<Vec3b> valeurs_connus;
 
 	for (int j=y_prior-half ; j < y_prior+half+1 ; j++) {
 		for (int i = x_prior-half ; i < x_prior+half+1 ; i++) {
 			
 			if(mask.at<uchar>(j,i) > 0) {
 				//connu
-				Point p(j,i);
-				connus.push_back(p);
+				//recuperation de la valeur du pixel
+				valeurs_connus.push_back(img.at<Vec3b>(j,i));
+				//changement de repere du pixel -> coin superieur gauche indexe a (0,0)
+				int j_index = j-(y_prior-half);
+				int i_index = i-(x_prior-half);
+				Point p(j_index,i_index);
+				indices_connus.push_back(p);
 			}
 		}
 	}
 
+	/*--------------------------------------
+	Recherche du plus proche voisin
+	---------------------------------------*/
 
-	//scan de l'image
-	for (int y = half ; y < height-half ; y++) {
-		for (int x = half ; x < width-half ; x++) {
+	//scan de l'image pour plus proche voisin
+	float score_nn = pow(pow(255.0,3.0),2.0);	//score de msd courant du plus proche voisin
+	int y_nn = 0;	//indices du
+	int x_nn = 0;	//plus proche voisin
+
+	for (int y_patch = 0 ; y_patch < height-t_patch ; y_patch++) {
+		for (int x_patch = 0 ; x_patch < width-t_patch ; x_patch++) {
+
+			float msd = 0.0;	//mean square difference au patch courant
 
 			//matching sur les pixels connus
+			for (int k = 0 ; k < indices_connus.size() ; k++) {
+
+				//convertir pixel connu vers espace du patch courant
+				Point p = indices_connus[k];
+				int j_courant = p.y + y_patch;
+				int i_courant = p.x + x_patch;
+
+				//square difference
+				Vec3f val_courant = normalizeRGB(img.at<Vec3b>(j_courant, i_courant));
+				Vec3f val_connu = normalizeRGB(valeurs_connus[k]);
+				float sqDiff = squareDiff(val_courant, val_connu);
+
+				//ajout a la somme courante
+				msd += sqDiff;
+			}
+
+			//fin du calcul de msd
+			msd /= (float)indices_connus.size();
+
+			//comparaison au score courant
+			if (msd < score_nn)
+			{
+				score_nn = msd;
+				y_nn = y_patch;
+				x_nn = x_patch;
+			}
+		}
+	} //fin du scan pour plus proche voisin
+
+	/*--------------------------------------
+	Application du plus proche voisin a la
+	zone prioritaire
+	---------------------------------------*/
+
+
+
 
 
 	/*
