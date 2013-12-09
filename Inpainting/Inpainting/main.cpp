@@ -69,9 +69,11 @@ int main(int argc, char ** argv) {
 
 	//définir une roi rectangulaire
 	Mat roi(mask, Rect(100,100,50,50));
+	Mat roiImg(img, Rect(100,100,50,50));
 
 	//appliquer roi à l'image, masque nul
 	roi = Scalar(0);
+	roiImg = Scalar(0);
 
 	//afficher le masque
 	namedWindow("masque", CV_WINDOW_AUTOSIZE);
@@ -199,22 +201,33 @@ int main(int argc, char ** argv) {
 	t_patch = 9.0;
 	half = t_patch/2;
 
-	//récupération des pixels connus du patch autour de la priorité
-	vector<Point> indices_connus;
+	//identification des pixels dans le patch autour de la priorité
+	vector<Point> indices_connus, indices_inconnus;
 	vector<Vec3b> valeurs_connus;
+	
+	//coin superieur gauche du patch
+	int y_prior_sg = y_prior-half;
+	int x_prior_sg = x_prior-half;
 
-	for (int j=y_prior-half ; j < y_prior+half+1 ; j++) {
-		for (int i = x_prior-half ; i < x_prior+half+1 ; i++) {
+	for (int j=y_prior_sg ; j < y_prior_sg+t_patch ; j++) {
+		for (int i = x_prior_sg ; i < x_prior_sg+t_patch ; i++) {
 			
 			if(mask.at<uchar>(j,i) > 0) {
 				//connu
 				//recuperation de la valeur du pixel
 				valeurs_connus.push_back(img.at<Vec3b>(j,i));
 				//changement de repere du pixel -> coin superieur gauche indexe a (0,0)
-				int j_index = j-(y_prior-half);
-				int i_index = i-(x_prior-half);
+				int j_index = j-(y_prior_sg);
+				int i_index = i-(x_prior_sg);
 				Point p(j_index,i_index);
 				indices_connus.push_back(p);
+			}
+			else {
+				//inconnu
+				int j_index = j-(y_prior_sg);
+				int i_index = i-(x_prior_sg);
+				Point p(j_index,i_index);
+				indices_inconnus.push_back(p);
 			}
 		}
 	}
@@ -262,21 +275,38 @@ int main(int argc, char ** argv) {
 			}
 		}
 	} //fin du scan pour plus proche voisin
+ 
 
 	/*--------------------------------------
 	Application du plus proche voisin a la
 	zone prioritaire
 	---------------------------------------*/
 
+	//on a y_nn et x_nn, indices du coin superieur gauche du plus proche voisin
+	//recuperation des pixels nouveaux
+	for (int k = 0 ; k < indices_inconnus.size() ; k++)
+	{
+		Point courant = indices_inconnus[k];
+		//indices
+		int y_ref = courant.y + y_nn;
+		int x_ref = courant.x + x_nn;
+
+		int y_inc = courant.y + y_prior_sg;
+		int x_inc = courant.x + x_prior_sg;
+
+		//remplissage
+		img.at<Vec3b>(y_inc,x_inc) = img.at<Vec3b>(y_ref,x_ref);
+
+		//propagation de la priorite
+	}
 
 
 
-
-	/*
+	
 	namedWindow("lena_trou", CV_WINDOW_AUTOSIZE);
 	imshow("lena_trou", img);
 	waitKey(0);
-	*/
+	
 	
 	return 0;
 }
