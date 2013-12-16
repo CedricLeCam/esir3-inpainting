@@ -234,6 +234,12 @@ int main(int argc, char ** argv) {
 	imshow("laplace", laplace);
 	
 	waitKey(0);
+
+	/*--------------------------------------
+	Iterations du remplissage
+	---------------------------------------*/
+
+
 	
 	//remplissage sur la plus haute priorite
 
@@ -242,6 +248,15 @@ int main(int argc, char ** argv) {
 	//parametres
 	t_patch = 9.0;
 	half = t_patch/2;
+
+
+	//nombre d'iterations
+	int it = 0;
+	int goal = 10;
+
+	while (it < goal)
+	{
+		it++;
 
 	//identification des pixels dans le patch autour de la priorité
 	vector<Point> indices_connus, indices_inconnus;
@@ -340,8 +355,26 @@ int main(int argc, char ** argv) {
 		img.at<Vec3b>(y_inc,x_inc) = img.at<Vec3b>(y_ref,x_ref);	
 	}
 
-	//propagation de la priorite
+	/*--------------------------------------
+	Propagation de la priorite
+	---------------------------------------*/
 	propagPrior(laplace, mask, y_prior_sg, x_prior_sg, t_patch, prior);
+
+	/*--------------------------------------
+	Recherche du nouveau prioritaire
+	---------------------------------------*/
+	double minVal;
+	double maxVal;
+	Point minLoc;
+	Point maxLoc;
+
+	minMaxLoc(laplace, &minVal, &maxVal, &minLoc, &maxLoc);
+
+	y_prior = maxLoc.y;
+	x_prior = maxLoc.x;
+	prior = maxVal;
+
+	}
 
 	namedWindow("lena_trou", CV_WINDOW_AUTOSIZE);
 	imshow("lena_trou", img);
