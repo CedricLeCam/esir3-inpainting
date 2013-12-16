@@ -36,6 +36,48 @@ float squareDiff(const Vec3f & v1, const Vec3f & v2)
 }
 
 
+//propagation de la priorite
+void propagPrior(Mat priorites, Mat mask, const int y_g, const int x_h, const int t_patch, const float prior)
+{
+	//facteur de propagation
+	float cst = 0.9;
+
+	//calculer les abscisses et ordonnees du tour du patch
+	int y_d = y_g + t_patch - 1;
+	int x_b = x_h + t_patch - 1;
+
+	//scan du patch
+	for (int j=y_g ; j < y_d+1 ; j++)
+	{
+		for (int i=x_h ; i < x_b+1 ; i++)
+		{
+			//action pour tour du patch
+			if (j == y_g || j == y_d || i == x_h || i == x_b)
+			{
+				//chercher si le pixel est sur la ligne de front => priorite non nulle
+				//si oui, propager la priorite
+				if (priorites.at<float>(j,i) != 0.0)
+				{
+					//jonction avec la nouvelle ligne de front
+					priorites.at<float>(j,i) = prior * cst;
+				}
+				//sinon, soit pixel inconnu => propager la priorite
+				//		 soit pixel connu => ne rien faire
+				else if (mask.at<uchar>(j,i) == 0)
+				{
+					priorites.at<float>(j,i) = prior * cst;
+				}
+			}
+			//reste du patch, priorite nulle
+			else
+			{
+				priorites.at<float>(j,i) = 0.0;
+			}
+		}
+	}
+}
+
+
 int main(int argc, char ** argv) {
 
 	cout << "start" << endl;
@@ -295,16 +337,18 @@ int main(int argc, char ** argv) {
 		int x_inc = courant.x + x_prior_sg;
 
 		//remplissage
-		img.at<Vec3b>(y_inc,x_inc) = img.at<Vec3b>(y_ref,x_ref);
-
-		//propagation de la priorite
+		img.at<Vec3b>(y_inc,x_inc) = img.at<Vec3b>(y_ref,x_ref);	
 	}
 
+	//propagation de la priorite
+	propagPrior(laplace, mask, y_prior_sg, x_prior_sg, t_patch, prior);
 
-
-	
 	namedWindow("lena_trou", CV_WINDOW_AUTOSIZE);
 	imshow("lena_trou", img);
+	waitKey(0);
+
+	namedWindow("prio", CV_WINDOW_AUTOSIZE);
+	imshow("prio", laplace);
 	waitKey(0);
 	
 	
