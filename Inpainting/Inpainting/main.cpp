@@ -40,7 +40,7 @@ float squareDiff(const Vec3f & v1, const Vec3f & v2)
 void propagPrior(Mat priorites, Mat mask, const int y_g, const int x_h, const int t_patch, const float prior)
 {
 	//facteur de propagation
-	float cst = 0.9;
+	float cst = 0.5;
 
 	//calculer les abscisses et ordonnees du tour du patch
 	int y_d = y_g + t_patch - 1;
@@ -101,10 +101,10 @@ int main(int argc, char ** argv) {
 	int width = img.size().width;
 
 	//afficher l'image
-	namedWindow("lena", CV_WINDOW_AUTOSIZE);
-	imshow("lena", img);
+	//namedWindow("lena", CV_WINDOW_AUTOSIZE);
+	//imshow("lena", img);
 
-	waitKey(0);
+	//waitKey(0);
 	
 	//créer masque binaire
 	Mat mask(img.size(), CV_8UC1, 255);
@@ -118,10 +118,10 @@ int main(int argc, char ** argv) {
 	roiImg = Scalar(0);
 
 	//afficher le masque
-	namedWindow("masque", CV_WINDOW_AUTOSIZE);
-	imshow("masque", mask);
+	//namedWindow("masque", CV_WINDOW_AUTOSIZE);
+	//imshow("masque", mask);
 
-	waitKey(0);
+	//waitKey(0);
 
 	/*--------------------------------------
 	Priorités
@@ -151,7 +151,7 @@ int main(int argc, char ** argv) {
 	}
 	*/
 
-	waitKey(0);
+	//waitKey(0);
 
 
 	
@@ -230,16 +230,18 @@ int main(int argc, char ** argv) {
 		}
 	}
 
-	namedWindow("laplace", CV_WINDOW_AUTOSIZE);
-	imshow("laplace", laplace);
+	//namedWindow("laplace", CV_WINDOW_AUTOSIZE);
+	//imshow("laplace", laplace);
 	
-	waitKey(0);
+	//waitKey(0);
 
 	/*--------------------------------------
 	Iterations du remplissage
 	---------------------------------------*/
 
-
+	cout << "premiere priorite : " << prior << endl;
+	cout << "y_prior : "<< y_prior << endl;
+	cout << "x_prior : "<< x_prior << endl;
 	
 	//remplissage sur la plus haute priorite
 
@@ -252,7 +254,7 @@ int main(int argc, char ** argv) {
 
 	//nombre d'iterations
 	int it = 0;
-	int goal = 10;
+	int goal = 4;
 
 	while (it < goal)
 	{
@@ -341,6 +343,7 @@ int main(int argc, char ** argv) {
 
 	//on a y_nn et x_nn, indices du coin superieur gauche du plus proche voisin
 	//recuperation des pixels nouveaux
+	cout << "inconnus size : "<< indices_inconnus.size() << endl;
 	for (int k = 0 ; k < indices_inconnus.size() ; k++)
 	{
 		Point courant = indices_inconnus[k];
@@ -352,7 +355,10 @@ int main(int argc, char ** argv) {
 		int x_inc = courant.x + x_prior_sg;
 
 		//remplissage
-		img.at<Vec3b>(y_inc,x_inc) = img.at<Vec3b>(y_ref,x_ref);	
+		img.at<Vec3b>(y_inc,x_inc) = img.at<Vec3b>(y_ref,x_ref);
+
+		//retrait des inconnus
+		mask.at<uchar>(y_inc,x_inc) = 255;
 	}
 
 	/*--------------------------------------
@@ -373,6 +379,10 @@ int main(int argc, char ** argv) {
 	y_prior = maxLoc.y;
 	x_prior = maxLoc.x;
 	prior = maxVal;
+
+	cout << maxVal << endl;
+	cout << "y_prior : "<< y_prior << endl;
+	cout << "x_prior : "<< x_prior << endl;
 
 	}
 
