@@ -35,6 +35,23 @@ float squareDiff(const Vec3f & v1, const Vec3f & v2)
 	return d*d;
 }
 
+//verifier que le patch ne comporte pas d'inconnu
+bool inspectPatch(Mat mask, const int y_sg, const int x_sg, const int t_patch)
+{
+	for (int j = y_sg ; j < y_sg + t_patch ; j++)
+	{
+		for (int i = x_sg ; i < x_sg + t_patch ; i++)
+		{
+			if (mask.at<uchar>(j,i) == 0)
+			{
+				return false;
+			}
+		}
+	}
+	//pas d'inconnu
+	return true;
+}
+
 
 //propagation de la priorite
 void propagPrior(Mat priorites, Mat mask, const int y_g, const int x_h, const int t_patch, const float prior)
@@ -82,7 +99,7 @@ int main(int argc, char ** argv) {
 
 	cout << "start" << endl;
 
-	string dataDir("../data/");	//chemin vers les données
+	string dataDir("../data/");	//chemin vers les donnï¿½es
 	string outDir(dataDir + "output/");	//chemin du repertoire de sortie
 
 	//ouvrir une image
@@ -106,14 +123,14 @@ int main(int argc, char ** argv) {
 
 	//waitKey(0);
 	
-	//créer masque binaire
+	//crï¿½er masque binaire
 	Mat mask(img.size(), CV_8UC1, 255);
 
-	//définir une roi rectangulaire
+	//dï¿½finir une roi rectangulaire
 	Mat roi(mask, Rect(100,100,50,50));
 	Mat roiImg(img, Rect(100,100,50,50));
 
-	//appliquer roi à l'image, masque nul
+	//appliquer roi ï¿½ l'image, masque nul
 	roi = Scalar(0);
 	roiImg = Scalar(0);
 
@@ -124,12 +141,12 @@ int main(int argc, char ** argv) {
 	//waitKey(0);
 
 	/*--------------------------------------
-	Priorités
+	Prioritï¿½s
 	---------------------------------------*/
 	
 	//ligne de front
 
-	//calculer le laplacien de mask, stocké dans une autre image
+	//calculer le laplacien de mask, stockï¿½ dans une autre image
 	Mat laplace(mask.size(), CV_32FC1);
 
 	Laplacian(mask, laplace, laplace.depth());
@@ -170,15 +187,15 @@ int main(int argc, char ** argv) {
 
 
 	
-	//calcul des priorités
+	//calcul des prioritï¿½s
 
-	//paramètres du patch
+	//paramï¿½tres du patch
 	float t_patch = 9.0;
 	int half = t_patch/2;
 	float invCard = 1.0/(t_patch*t_patch);
 
 
-	//retenir la dernière plus haute priorité
+	//retenir la derniï¿½re plus haute prioritï¿½
 	int y_prior = 0;
 	int x_prior = 0;
 	float prior = 0.0;
@@ -205,12 +222,12 @@ int main(int argc, char ** argv) {
 				}
 				
 				//fin de compte
-				//mettre à jour priorité
+				//mettre ï¿½ jour prioritï¿½
 				float loc_prior = ((float)connus) * invCard;
 				laplace.at<float>(y,x) = loc_prior;
 
 
-				//retenir la plus haute priorité
+				//retenir la plus haute prioritï¿½
 				if (loc_prior >= prior) {
 					prior = loc_prior;
 					y_prior = y;
@@ -221,7 +238,7 @@ int main(int argc, char ** argv) {
 
 		}
 	}
-	//fin du calcul des priorités initiales
+	//fin du calcul des prioritï¿½s initiales
 
 	//inspection de qqs pixels
 	for (int i = 98 ; i<103 ; i++) {
@@ -260,7 +277,7 @@ int main(int argc, char ** argv) {
 	{
 		it++;
 
-	//identification des pixels dans le patch autour de la priorité
+	//identification des pixels dans le patch autour de la prioritï¿½
 	vector<Point> indices_connus, indices_inconnus;
 	vector<Vec3b> valeurs_connus;
 	
@@ -303,6 +320,10 @@ int main(int argc, char ** argv) {
 	for (int y_patch = 0 ; y_patch < height-t_patch ; y_patch++) {
 		for (int x_patch = 0 ; x_patch < width-t_patch ; x_patch++) {
 
+			//inspecter si pas de pixel inconnu
+			if (inspectPatch(mask, y_patch, x_patch, t_patch))
+			{
+
 			float msd = 0.0;	//mean square difference au patch courant
 
 			//matching sur les pixels connus
@@ -331,6 +352,7 @@ int main(int argc, char ** argv) {
 				score_nn = msd;
 				y_nn = y_patch;
 				x_nn = x_patch;
+			}
 			}
 		}
 	} //fin du scan pour plus proche voisin
