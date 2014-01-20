@@ -10,6 +10,8 @@
 using namespace std;
 using namespace cv;
 
+//template latex icip 2015
+
 
 //transition de RGB vers RGB normalise
 Vec3f normalizeRGB(const Vec3b & pixel)
@@ -42,7 +44,7 @@ bool inspectPatch(Mat mask, const int y_sg, const int x_sg, const int t_patch)
 	{
 		for (int i = x_sg ; i < x_sg + t_patch ; i++)
 		{
-			if (mask.at<uchar>(j,i) == 0)
+			if (mask.at<uchar>(j,i) < (unsigned char)255)
 			{
 				return false;
 			}
@@ -60,8 +62,8 @@ void propagPrior(Mat priorites, Mat mask, const int y_g, const int x_h, const in
 	float cst = 0.5;
 
 	//calculer les abscisses et ordonnees du tour du patch
-	int y_d = y_g + t_patch - 1;
-	int x_b = x_h + t_patch - 1;
+	int y_d = y_g + t_patch ;
+	int x_b = x_h + t_patch ;
 
 	//scan du patch
 	for (int j=y_g ; j < y_d+1 ; j++)
@@ -76,13 +78,13 @@ void propagPrior(Mat priorites, Mat mask, const int y_g, const int x_h, const in
 				if (priorites.at<float>(j,i) != 0.0)
 				{
 					//jonction avec la nouvelle ligne de front
-					priorites.at<float>(j,i) = prior * cst;
+					priorites.at<float>(j,i) = prior * cst; //100.0; //;
 				}
 				//sinon, soit pixel inconnu => propager la priorite
 				//		 soit pixel connu => ne rien faire
-				else if (mask.at<uchar>(j,i) == 0)
+				else if (mask.at<uchar>(j,i) < (unsigned char) 255)
 				{
-					priorites.at<float>(j,i) = prior * cst;
+					priorites.at<float>(j,i) = prior * cst; //100.0;
 				}
 			}
 			//reste du patch, priorite nulle
@@ -122,7 +124,7 @@ int main(int argc, char ** argv) {
 	//imshow("lena", img);
 
 	//waitKey(0);
-	
+
 	//cr�er masque binaire
 	Mat mask(img.size(), CV_8UC1, 255);
 
@@ -134,6 +136,13 @@ int main(int argc, char ** argv) {
 	roi = Scalar(0);
 	roiImg = Scalar(0);
 
+
+	//afficher l'image avec trou
+	namedWindow("lenamasque", CV_WINDOW_AUTOSIZE);
+	imshow("lenamasque", img);
+
+	waitKey(0);
+
 	//afficher le masque
 	//namedWindow("masque", CV_WINDOW_AUTOSIZE);
 	//imshow("masque", mask);
@@ -143,7 +152,7 @@ int main(int argc, char ** argv) {
 	/*--------------------------------------
 	Priorit�s
 	---------------------------------------*/
-	
+
 	//ligne de front
 
 	//calculer le laplacien de mask, stock� dans une autre image
@@ -162,17 +171,17 @@ int main(int argc, char ** argv) {
 	namedWindow("laplace", CV_WINDOW_AUTOSIZE);
 	imshow("laplace", laplace);
 
-	
+
 	if (imwrite(outDir + "laplace.pgm",laplace)) {
-		cout << "enregistre" << endl;
+	cout << "enregistre" << endl;
 	}
 	*/
 
 	//waitKey(0);
 
 
-	
-	
+
+
 	//ligne de front contenue dans le laplacien
 
 	//binariser le laplacien
@@ -186,13 +195,13 @@ int main(int argc, char ** argv) {
 	}
 
 
-	
+
 	//calcul des priorit�s
 
 	//param�tres du patch
-	float t_patch = 9.0;
+	int t_patch = 9;
 	int half = t_patch/2;
-	float invCard = 1.0/(t_patch*t_patch);
+	float invCard = 1.0/(float)(t_patch*t_patch);
 
 
 	//retenir la derni�re plus haute priorit�
@@ -205,37 +214,37 @@ int main(int argc, char ** argv) {
 		for (int x=0 ; x < laplace.size().width ; x++) {
 
 			//si ligne de front
-			if (laplace.at<float>(y,x) == 255.0) {
+			if (laplace.at<float>(y,x) >= 255.0) {
 				//compter connus et inconnus, appliquer patch
-				
+
 				int connus = 0;
-				for (int i=0 ; i<t_patch ; i++) {
-					for (int j=0 ; j<t_patch ; j++) {
+				for (int i=0 ; i<t_patch ; i++)
+				{
+					for (int j=0 ; j<t_patch ; j++)
+					{
 
-
-						if (mask.at<uchar>(y-half+i,x-half+j) > 0) {
+						if (mask.at<uchar>(y-half+i,x-half+j) > 0)
+						{
 							//connu
 							connus++;
 						}
-						
 					}
-				}
-				
+				}				
 				//fin de compte
 				//mettre � jour priorit�
 				float loc_prior = ((float)connus) * invCard;
+				//float loc_prior = 100.0;
 				laplace.at<float>(y,x) = loc_prior;
 
-
 				//retenir la plus haute priorit�
-				if (loc_prior >= prior) {
+				//if (loc_prior >= prior) {
+				if (loc_prior > prior)
+				{
 					prior = loc_prior;
 					y_prior = y;
 					x_prior = x;
 				}
-
 			}
-
 		}
 	}
 	//fin du calcul des priorit�s initiales
@@ -249,7 +258,7 @@ int main(int argc, char ** argv) {
 
 	//namedWindow("laplace", CV_WINDOW_AUTOSIZE);
 	//imshow("laplace", laplace);
-	
+
 	//waitKey(0);
 
 	/*--------------------------------------
@@ -259,7 +268,7 @@ int main(int argc, char ** argv) {
 	cout << "premiere priorite : " << prior << endl;
 	cout << "y_prior : "<< y_prior << endl;
 	cout << "x_prior : "<< x_prior << endl;
-	
+
 	//remplissage sur la plus haute priorite
 
 	//template matching
@@ -271,151 +280,170 @@ int main(int argc, char ** argv) {
 
 	//nombre d'iterations
 	int it = 0;
-	int goal = 4;
+	int goal = 2;
 
 	while (it < goal)
 	{
 		it++;
 
-	//identification des pixels dans le patch autour de la priorit�
-	vector<Point> indices_connus, indices_inconnus;
-	vector<Vec3b> valeurs_connus;
-	
-	//coin superieur gauche du patch
-	int y_prior_sg = y_prior-half;
-	int x_prior_sg = x_prior-half;
+		//identification des pixels dans le patch autour de la priorit�
+		vector<Point> indices_connus, indices_inconnus;
+		vector<Vec3b> valeurs_connus;
 
-	for (int j=y_prior_sg ; j < y_prior_sg+t_patch ; j++) {
-		for (int i = x_prior_sg ; i < x_prior_sg+t_patch ; i++) {
+		//coin superieur gauche du patch
+		int y_prior_sg = y_prior-half;
+		int x_prior_sg = x_prior-half;
+
+		for (int j=y_prior_sg ; j < y_prior_sg+t_patch ; j++) {
+			for (int i = x_prior_sg ; i < x_prior_sg+t_patch ; i++) {
+
+				int j_index = j-(y_prior_sg);
+					int i_index = i-(x_prior_sg);
+					Point p(j_index,i_index);
+
+				if(mask.at<uchar>(j,i) > (unsigned char)0)
+				{
+					//connu
+					//recuperation de la valeur du pixel
+					valeurs_connus.push_back(img.at<Vec3b>(j,i));
+					//changement de repere du pixel -> coin superieur gauche indexe a (0,0)
+					indices_connus.push_back(p);
+				}
+				else
+				{
+					//inconnu
+					indices_inconnus.push_back(p);
+				}
+			}
+		}
+
+		for (int i = 0 ; i < indices_inconnus.size() ; i++)
+		{
+			std::cout << "pixel inconnu : "<< indices_inconnus[i].y << " , " << indices_inconnus[i].x << std::endl;
+		}
+
+		/*--------------------------------------
+		Recherche du plus proche voisin
+		---------------------------------------*/
+
+		//scan de l'image pour plus proche voisin
+		float score_nn = pow(pow(255.0,3.0),2.0);	//score de msd courant du plus proche voisin
+		int y_nn = 0;	//indices du
+		int x_nn = 0;	//plus proche voisin
+
+		for (int y_patch = 0 ; y_patch < height-t_patch ; y_patch++)
+		{
+			for (int x_patch = 0 ; x_patch < width-t_patch ; x_patch++)
+			{
+
+				//inspecter si pas de pixel inconnu
+				if (inspectPatch(mask, y_patch, x_patch, t_patch))
+				{
+					float msd = 0.0;	//mean square difference au patch courant
+
+					//matching sur les pixels connus
+					for (unsigned int k = 0 ; k < indices_connus.size() ; k++)
+					{
+						//convertir pixel connu vers espace du patch courant
+						Point p = indices_connus[k];
+						int j_courant = p.y + y_patch;
+						int i_courant = p.x + x_patch;
+
+						//square difference
+						Vec3f val_courant = normalizeRGB(img.at<Vec3b>(j_courant, i_courant));
+						Vec3f val_connu = normalizeRGB(valeurs_connus[k]);
+						float sqDiff = squareDiff(val_courant, val_connu);
+
+						//ajout a la somme courante
+						msd += sqDiff;
+					}
+
+					//fin du calcul de msd
+					msd /= (float)indices_connus.size();
+
+					//comparaison au score courant
+					if (msd < score_nn)
+					{
+						score_nn = msd;
+						y_nn = y_patch;
+						x_nn = x_patch;
+					}
+				}
+			}
+		} //fin du scan pour plus proche voisin
+
+
+		/*--------------------------------------
+		Application du plus proche voisin a la
+		zone prioritaire
+		---------------------------------------*/
+
+		//on a y_nn et x_nn, indices du coin superieur gauche du plus proche voisin
+		//recuperation des pixels nouveaux
+		cout << "inconnus size : "<< indices_inconnus.size() << endl;
+		for (unsigned int k = 0 ; k < indices_inconnus.size() ; k++)
+		{
+			Point courant = indices_inconnus[k];
+			//indices
+			int y_ref = courant.y + y_nn;
+			int x_ref = courant.x + x_nn;
+
+			int y_inc = courant.y + y_prior_sg;
+			int x_inc = courant.x + x_prior_sg;
+
+			//remplissage
+			img.at<Vec3b>(y_inc,x_inc) = img.at<Vec3b>(y_ref,x_ref);
+
+			//retrait des inconnus
+			mask.at<uchar>(y_inc,x_inc) = (unsigned char)255;
+
 			
-			if(mask.at<uchar>(j,i) > 0) {
-				//connu
-				//recuperation de la valeur du pixel
-				valeurs_connus.push_back(img.at<Vec3b>(j,i));
-				//changement de repere du pixel -> coin superieur gauche indexe a (0,0)
-				int j_index = j-(y_prior_sg);
-				int i_index = i-(x_prior_sg);
-				Point p(j_index,i_index);
-				indices_connus.push_back(p);
-			}
-			else {
-				//inconnu
-				int j_index = j-(y_prior_sg);
-				int i_index = i-(x_prior_sg);
-				Point p(j_index,i_index);
-				indices_inconnus.push_back(p);
-			}
 		}
-	}
 
-	/*--------------------------------------
-	Recherche du plus proche voisin
-	---------------------------------------*/
+		namedWindow("masque", CV_WINDOW_AUTOSIZE);
+			imshow("mask", mask);
+		//	waitKey(0);
 
-	//scan de l'image pour plus proche voisin
-	float score_nn = pow(pow(255.0,3.0),2.0);	//score de msd courant du plus proche voisin
-	int y_nn = 0;	//indices du
-	int x_nn = 0;	//plus proche voisin
+		/*--------------------------------------
+		Propagation de la priorite
+		---------------------------------------*/
+		propagPrior(laplace, mask, y_prior_sg, x_prior_sg, t_patch, prior);
 
-	for (int y_patch = 0 ; y_patch < height-t_patch ; y_patch++) {
-		for (int x_patch = 0 ; x_patch < width-t_patch ; x_patch++) {
+		namedWindow("prio", CV_WINDOW_AUTOSIZE);
+	imshow("prio", laplace);
+//	waitKey(0);
 
-			//inspecter si pas de pixel inconnu
-			if (inspectPatch(mask, y_patch, x_patch, t_patch))
-			{
+		/*--------------------------------------
+		Recherche du nouveau prioritaire
+		---------------------------------------*/
+		double minVal;
+		double maxVal;
+		Point minLoc;
+		Point maxLoc;
 
-			float msd = 0.0;	//mean square difference au patch courant
+		minMaxLoc(laplace, &minVal, &maxVal, &minLoc, &maxLoc);
 
-			//matching sur les pixels connus
-			for (int k = 0 ; k < indices_connus.size() ; k++) {
+		y_prior = maxLoc.y;
+		x_prior = maxLoc.x;
+		prior = maxVal;
 
-				//convertir pixel connu vers espace du patch courant
-				Point p = indices_connus[k];
-				int j_courant = p.y + y_patch;
-				int i_courant = p.x + x_patch;
-
-				//square difference
-				Vec3f val_courant = normalizeRGB(img.at<Vec3b>(j_courant, i_courant));
-				Vec3f val_connu = normalizeRGB(valeurs_connus[k]);
-				float sqDiff = squareDiff(val_courant, val_connu);
-
-				//ajout a la somme courante
-				msd += sqDiff;
-			}
-
-			//fin du calcul de msd
-			msd /= (float)indices_connus.size();
-
-			//comparaison au score courant
-			if (msd < score_nn)
-			{
-				score_nn = msd;
-				y_nn = y_patch;
-				x_nn = x_patch;
-			}
-			}
-		}
-	} //fin du scan pour plus proche voisin
- 
-
-	/*--------------------------------------
-	Application du plus proche voisin a la
-	zone prioritaire
-	---------------------------------------*/
-
-	//on a y_nn et x_nn, indices du coin superieur gauche du plus proche voisin
-	//recuperation des pixels nouveaux
-	cout << "inconnus size : "<< indices_inconnus.size() << endl;
-	for (int k = 0 ; k < indices_inconnus.size() ; k++)
-	{
-		Point courant = indices_inconnus[k];
-		//indices
-		int y_ref = courant.y + y_nn;
-		int x_ref = courant.x + x_nn;
-
-		int y_inc = courant.y + y_prior_sg;
-		int x_inc = courant.x + x_prior_sg;
-
-		//remplissage
-		img.at<Vec3b>(y_inc,x_inc) = img.at<Vec3b>(y_ref,x_ref);
-
-		//retrait des inconnus
-		mask.at<uchar>(y_inc,x_inc) = 255;
-	}
-
-	/*--------------------------------------
-	Propagation de la priorite
-	---------------------------------------*/
-	propagPrior(laplace, mask, y_prior_sg, x_prior_sg, t_patch, prior);
-
-	/*--------------------------------------
-	Recherche du nouveau prioritaire
-	---------------------------------------*/
-	double minVal;
-	double maxVal;
-	Point minLoc;
-	Point maxLoc;
-
-	minMaxLoc(laplace, &minVal, &maxVal, &minLoc, &maxLoc);
-
-	y_prior = maxLoc.y;
-	x_prior = maxLoc.x;
-	prior = maxVal;
-
-	cout << maxVal << endl;
-	cout << "y_prior : "<< y_prior << endl;
-	cout << "x_prior : "<< x_prior << endl;
+		cout << maxVal << endl;
+		cout << "y_prior : "<< y_prior << endl;
+		cout << "x_prior : "<< x_prior << endl;
 
 	}
+
+
 
 	namedWindow("lena_trou", CV_WINDOW_AUTOSIZE);
 	imshow("lena_trou", img);
 	waitKey(0);
 
-	namedWindow("prio", CV_WINDOW_AUTOSIZE);
-	imshow("prio", laplace);
+	
+
+	std::cout << "fin" << std::endl;
+
 	waitKey(0);
-	
-	
+
 	return 0;
 }
