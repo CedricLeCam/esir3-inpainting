@@ -8,3 +8,8 @@ OpenCV référence depth
         IPL_DEPTH_32F - single-precision floating-point number. Equivalent to CV_32F in matrix types.
         IPL_DEPTH_64F - double-precision floating-point number. Equivalent to CV_64F in matrix types.
 
+OpenCV orientations
+
+		-->x		-->j
+		|			|
+		V y			V i
