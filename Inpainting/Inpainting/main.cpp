@@ -56,16 +56,18 @@ bool inspectPatch(Mat mask, const int i_sg, const int j_sg, const int t_patch)
 
 
 //propagation de la priorite
-void propagPrior(Mat priorites, Mat mask, const int i_h, const int j_g, const int t_patch, const float prior)
+void propagPrior(Mat priorites, Mat mask, const int i_sg, const int j_sg, const int t_patch, const float prior)
 {
 	//facteur de propagation
 	float cst = 0.5;
 
 	//calculer les abscisses et ordonnees du tour du patch
-	int i_b = i_h + t_patch ;
-	int j_d = j_g + t_patch ;
+	int i_h = i_sg-1;
+	int j_g = j_sg-1;
+	int i_b = i_sg + t_patch ;
+	int j_d = j_sg + t_patch ;
 
-	//scan du patch
+	//scan du tour et de l'interieur du patch
 	for (int i=i_h ; i < i_b+1 ; i++)
 	{
 		for (int j=j_g ; j < j_d+1 ; j++)
