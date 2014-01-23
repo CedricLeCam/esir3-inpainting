@@ -59,7 +59,7 @@ bool inspectPatch(Mat mask, const int i_sg, const int j_sg, const int t_patch)
 void propagPrior(Mat priorites, Mat mask, const int i_sg, const int j_sg, const int t_patch, const float prior)
 {
 	//facteur de propagation
-	float cst = 0.5;
+	float cst = 0.4;
 
 	//calculer les abscisses et ordonnees du tour du patch
 	int i_h = i_sg-1;
@@ -286,7 +286,7 @@ int main(int argc, char ** argv) {
 
 	//nombre d'iterations
 	int it = 0;
-	int goal = 2;
+	int goal = 93;
 
 	while (it < goal)
 	{
