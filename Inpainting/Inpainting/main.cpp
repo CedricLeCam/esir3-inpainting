@@ -2,9 +2,11 @@
 #include <string>
 #include <vector>
 #include <cmath>
+#include <algorithm>
 #include <opencv2\core\core.hpp>
 #include <opencv2\highgui\highgui.hpp>
 #include <opencv2\imgproc\imgproc.hpp>
+
 
 
 using namespace std;
@@ -201,7 +203,7 @@ int main(int argc, char ** argv) {
 	//calcul des priorit�s
 
 	//param�tres du patch
-	int t_patch = 9;
+	int t_patch = 5;
 	int half = t_patch/2;
 	float invCard = 1.0/(float)(t_patch*t_patch);
 
@@ -285,12 +287,15 @@ int main(int argc, char ** argv) {
 
 
 	//nombre d'iterations
-	int it = 0;
-	int goal = 93;
+	//int it = 0;
+	//int goal = 92;
 
-	while (it < goal)
+	bool suite = true;
+
+	//while (it < goal)
+	while (suite)
 	{
-		it++;
+		//it++;
 
 		//identification des pixels dans le patch autour de la priorit�
 		vector<Point> indices_connus, indices_inconnus;
@@ -337,14 +342,26 @@ int main(int argc, char ** argv) {
 		Recherche du plus proche voisin
 		---------------------------------------*/
 
+		//definition d'une fenetre de recherche autour du patch prioritaire
+		int t_recherche = 20;
+		int i_sg_recherche, j_sg_recherche, i_id_recherche, j_id_recherche;
+
+		i_sg_recherche = std::max(0,i_prior_sg-t_recherche);
+		j_sg_recherche = std::max(0,j_prior_sg-t_recherche);
+		i_id_recherche = std::min(height-t_patch, i_prior_sg+t_recherche);
+		j_id_recherche = std::min(width-t_patch, j_prior_sg+t_recherche);
+
+
 		//scan de l'image pour plus proche voisin
 		float score_nn = pow(pow(255.0,3.0),2.0);	//score de msd courant du plus proche voisin
 		int i_nn = 0;	//indices du
 		int j_nn = 0;	//plus proche voisin
 
-		for (int i_patch = 0 ; i_patch < height-t_patch ; i_patch++)
+		//for (int i_patch = 0 ; i_patch < height-t_patch ; i_patch++)
+		for (int i_patch = i_sg_recherche ; i_patch < i_id_recherche+1 ; i_patch++)
 		{
-			for (int j_patch = 0 ; j_patch < width-t_patch ; j_patch++)
+			//for (int j_patch = 0 ; j_patch < width-t_patch ; j_patch++)
+			for (int j_patch = j_sg_recherche ; j_patch < j_id_recherche+1 ; j_patch++)
 			{
 
 				//inspecter si pas de pixel inconnu
@@ -413,7 +430,7 @@ int main(int argc, char ** argv) {
 
 		namedWindow("masque", CV_WINDOW_AUTOSIZE);
 			imshow("mask", mask);
-		//	waitKey(0);
+			waitKey(1);
 
 		/*--------------------------------------
 		Propagation de la priorite
@@ -422,7 +439,7 @@ int main(int argc, char ** argv) {
 
 		namedWindow("prio", CV_WINDOW_AUTOSIZE);
 	imshow("prio", laplace);
-//	waitKey(0);
+	waitKey(1);
 
 		/*--------------------------------------
 		Recherche du nouveau prioritaire
@@ -438,16 +455,24 @@ int main(int argc, char ** argv) {
 		j_prior = maxLoc.x;
 		prior = maxVal;
 
+		if (prior == 0.0)
+			suite = false;
+
 		cout << maxVal << endl;
 		cout << "i_prior : "<< i_prior << endl;
 		cout << "j_prior : "<< j_prior << endl;
+
+		namedWindow("lena_constr", CV_WINDOW_AUTOSIZE);
+		imshow("lena_constr", img);
+		waitKey(1);
+
 
 	}
 
 
 
-	namedWindow("lena_trou", CV_WINDOW_AUTOSIZE);
-	imshow("lena_trou", img);
+	namedWindow("lena_patch", CV_WINDOW_AUTOSIZE);
+	imshow("lena_patch", img);
 	waitKey(0);
 
 	
