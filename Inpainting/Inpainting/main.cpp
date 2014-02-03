@@ -133,8 +133,8 @@ int main(int argc, char ** argv) {
 	Mat mask(img.size(), CV_8UC1, 255);
 
 	//d�finir une roi rectangulaire
-	Mat roi(mask, Rect(200,100,50,50));
-	Mat roiImg(img, Rect(200,100,50,50));
+	Mat roi(mask, Rect(200,200,100,50));
+	Mat roiImg(img, Rect(200,200,100,50));
 
 	//appliquer roi � l'image, masque nul
 	roi = Scalar(0);
